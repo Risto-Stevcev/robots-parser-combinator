@@ -184,10 +184,10 @@ describe('Parsers', () => {
   describe('nongroupline', () => {
     it('should parse text', () => {
       let string = 'http://localhost:80/static/sitemap.xml'
-      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string}\n`)).value).to.deep.equal({ sitemap: { value: string, comment: ''} })
-      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string} #h3y!\n`)).value).to.deep.equal({ sitemap: { value: string, comment: 'h3y!'} })
-      expect(p.parse(s.nongroupline, p.stream(`: f00\n`)).value).to.deep.equal({ othernongroupfield: { value: 'f00', comment: ''} })
-      expect(p.parse(s.nongroupline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othernongroupfield: { value: 'bar ', comment: 'h3y!'} })
+      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string}\n`)).value).to.deep.equal({ sitemap: { value: string } })
+      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string} #h3y!\n`)).value).to.deep.equal({ sitemap: { value: string, comment: 'h3y!' } })
+      expect(p.parse(s.nongroupline, p.stream(`: f00\n`)).value).to.deep.equal({ othernongroupfield: { value: 'f00' } })
+      expect(p.parse(s.nongroupline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othernongroupfield: { value: 'bar ', comment: 'h3y!' } })
     })
 
     it('should fail to parse text', () => {
@@ -202,12 +202,12 @@ describe('Parsers', () => {
   describe('groupmemberline', () => {
     it('should parse text', () => {
       let string = '/static/*.js'
-      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string}\n`)).value).to.deep.equal({ allow: { value: string, comment: ''} })
-      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string} #h3y!\n`)).value).to.deep.equal({ allow: { value: string, comment: 'h3y!'} })
-      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string}\n`)).value).to.deep.equal({ disallow: { value: string, comment: ''} })
-      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string} #h3y!\n`)).value).to.deep.equal({ disallow: { value: string, comment: 'h3y!'} })
-      expect(p.parse(s.groupmemberline, p.stream(`: foo\n`)).value).to.deep.equal({ othermemberfield: { value: 'foo', comment: ''} })
-      expect(p.parse(s.groupmemberline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othermemberfield: { value: 'bar ', comment: 'h3y!'} })
+      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string}\n`)).value).to.deep.equal({ allow: { value: string } })
+      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string} #h3y!\n`)).value).to.deep.equal({ allow: { value: string, comment: 'h3y!' } })
+      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string}\n`)).value).to.deep.equal({ disallow: { value: string } })
+      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string} #h3y!\n`)).value).to.deep.equal({ disallow: { value: string, comment: 'h3y!' } })
+      expect(p.parse(s.groupmemberline, p.stream(`: foo\n`)).value).to.deep.equal({ othermemberfield: { value: 'foo' } })
+      expect(p.parse(s.groupmemberline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othermemberfield: { value: 'bar ', comment: 'h3y!' } })
     })
 
     it('should fail to parse text', () => {
@@ -223,8 +223,8 @@ describe('Parsers', () => {
 
   describe('startgroupline', () => {
     it('should parse text', () => {
-      expect(p.parse(s.startgroupline, p.stream(`user-agent: curl\n`)).value).to.deep.equal({ useragent: { value: 'curl', comment: ''} })
-      expect(p.parse(s.startgroupline, p.stream(`user-agent: curl\n`)).value).to.deep.equal({ useragent: { value: 'curl', comment: ''} })
+      expect(p.parse(s.startgroupline, p.stream(`user-agent: curl\n`)).value).to.deep.equal({ useragent: { value: 'curl' } })
+      expect(p.parse(s.startgroupline, p.stream(`user-agent: curl\n`)).value).to.deep.equal({ useragent: { value: 'curl' } })
     })
 
     it('should fail to parse text', () => {
@@ -238,8 +238,8 @@ describe('Parsers', () => {
 
   describe('entries', () => {
     it('should parse text', () => {
-      expect(p.parse(s.entries, p.stream(robotstxt)).value).to.deep.equal(expected)
-      expect(p.parse(s.entries, p.stream(robotstxt.toLowerCase())).value).to.deep.equal(expected)
+      expect(p.parse(s.entries, p.stream(robotstxt)).value).to.deep.equal([expected])
+      expect(p.parse(s.entries, p.stream(robotstxt.toLowerCase())).value).to.deep.equal([expected])
     })
 
     it('should fail to parse text', () => {
@@ -250,7 +250,7 @@ describe('Parsers', () => {
 
   describe('robotstxt', () => {
     it('should parse text', () => {
-      expect(p.parse(s.seqEOF(s.robotstxt, true), p.stream('\uFEFF'+robotstxt)).value).to.deep.equal(expected)
+      expect(p.parse(s.seqEOF(s.robotstxt, true), p.stream('\uFEFF'+robotstxt)).value).to.deep.equal([expected])
     })
   })
 })

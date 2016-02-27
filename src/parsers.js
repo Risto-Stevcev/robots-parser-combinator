@@ -84,8 +84,10 @@ let agentvalue      = textvalue
                           })
                         ])).value
 
-                        if (line)
-                          (line.sitemap || line.othernongroupfield).comment = (yield p.maybe(comment)).value
+                        let commentValue = (yield p.maybe(comment)).value
+
+                        if (line && commentValue)
+                          (line.sitemap || line.othernongroupfield).comment = commentValue
 
                         yield EOL
                         return line
@@ -112,8 +114,10 @@ let agentvalue      = textvalue
                           })
                         ])).value
 
-                        if (line)
-                          (line[field] || line.othermemberfield).comment = (yield p.maybe(comment)).value
+                        let commentValue = (yield p.maybe(comment)).value
+
+                        if (line && commentValue)
+                          (line[field] || line.othermemberfield).comment = commentValue
 
                         yield EOL
                         return line
@@ -126,7 +130,9 @@ let agentvalue      = textvalue
                         yield p.char(':')
                         yield p.maybe(LWS)
                         result.useragent.value   = (yield agentvalue).value
-                        result.useragent.comment = (yield p.maybe(comment)).value
+                        let commentValue = (yield p.maybe(comment)).value
+                        if (commentValue)
+                          result.useragent.comment = commentValue
                         yield EOL
                         return result
                       })
@@ -157,7 +163,7 @@ let seqEOF = function(parser, parseTailingSpaces) {
   })
 }
 
-let parse = string => p.parse(seqEOF(robotstxt, true), p.stream(string)).value || []
+let parse = string => [].concat.apply([], p.parse(seqEOF(robotstxt, true), p.stream(string)).value || [])  // flatten
 
 
 

@@ -1,35 +1,30 @@
 [
-  [
-    {
-      "useragent": {
-        "value": "*",
-        "comment": ""
-      }
-    },
-    {
-      "allow": {
-        "value": "/blog/index.html",
-        "comment": "site blog"
-      }
-    },
-    {
-      "disallow": {
-        "value": "/cgi-bin/",
-        "comment": ""
-      }
-    },
-    {
-      "disallow": {
-        "value": "/tmp/",
-        "comment": ""
-      }
-    },
-    {
-      "sitemap": {
-        "value": "http://www.mysite.com/sitemaps/profiles-sitemap.xml",
-        "comment": "extra profile urls"
-      }
+  {
+    "useragent": {
+      "value": "*"
     }
-    , "save the robots"
-  ]
+  },
+  {
+    "allow": {
+      "value": "/blog/index.html",
+      "comment": "site blog"
+    }
+  },
+  {
+    "disallow": {
+      "value": "/cgi-bin/"
+    }
+  },
+  {
+    "disallow": {
+      "value": "/tmp/"
+    }
+  },
+  {
+    "sitemap": {
+      "value": "http://www.mysite.com/sitemaps/profiles-sitemap.xml",
+      "comment": "extra profile urls"
+    }
+  }
+  , "save the robots"
 ]
