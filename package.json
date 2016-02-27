@@ -1,0 +1,35 @@
+{
+  "name": "robots-parser-combinator",
+  "version": "0.9.0",
+  "description": "A proper robots.txt parser and combinator that works with eulalie",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "engines": {
+    "node": "5.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://www.github.com/Risto-Stevcev/robots-parser-combinator.git"
+  },
+  "keywords": [
+    "robots",
+    "robots.txt",
+    "parse",
+    "parser",
+    "combinator",
+    "eulalie"
+  ],
+  "author": "Risto Stevcev",
+  "license": "MIT",
+  "dependencies": {
+    "babel-polyfill": "^6.5.0",
+    "eulalie": "^2.5.2",
+    "url-parser-combinator": "^1.0.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^2.4.5"
+  }
+}
