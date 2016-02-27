@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /blog/index.html  # site blog
+Disallow: /cgi-bin/
+Disallow: /tmp/
+Sitemap: http://www.mysite.com/sitemaps/profiles-sitemap.xml  # extra profile urls
+# save the robots
+Host: www.mysite.com
+Crawl-delay: 2.5  # for load balancer
+# save them all!

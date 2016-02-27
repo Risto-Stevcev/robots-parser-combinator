@@ -3,9 +3,11 @@ require('babel-polyfill')
 const p = require('eulalie')
 
 const path        = require('url-parser-combinator').path
+    , net_loc     = require('url-parser-combinator').net_loc
     , absoluteURI = require('url-parser-combinator').absoluteURL
 
 /* https://developers.google.com/webmasters/control-crawl-index/docs/robots_txt
+ * http://www.ietf.org/rfc/rfc5234.txt
 robotstxt = *entries  // typo: *entries should be entries since * is repeated in entries rule
 entries = *( ( <1>*startgroupline 
   *(groupmemberline | nongroupline | comment)
@@ -39,10 +41,19 @@ let isCTL       = c => /^[\u0000-\u001F\u007F]$/.test(c)
   , isAnychar   = c => /^.$/.test(c) && !isCTL(c)
   , isValuechar = c => /^.$/.test(c) && !(isCTL(c) || /^#$/.test(c))
 
+var LWSWS;
+let LWSrule = {
+  strict:   p.many1(p.either([p.char(' '), p.char('\t')])),
+  flexible: p.many(p.either([p.char(' '), p.char('\t')])),
+}
+
+let setStrictLWS = setStrict => setStrict ? (LWSWS = LWSrule.strict) : (LWSWS = LWSrule.flexible)
+setStrictLWS(false)
+
 let EOL       = p.either([p.string('\r\n'), p.char('\r'), p.char('\n')])
   , LWS       = p.seq(function*() {
                   return (yield p.maybe(EOL)).value
-                       + (yield p.many1(p.either([p.char(' '), p.char('\t')]))).value
+                       + (yield LWSWS).value
                 })
   , BOM       = p.sat(isBOM)
   , anychar   = p.sat(isAnychar)
@@ -150,6 +161,65 @@ let agentvalue      = textvalue
                         return (yield entries).value
                       })
 
+/* Nonstandard directives */
+// crawldelayline = [LWS] "crawl-delay" [LWS] ":" [LWS] float [comment] EOL
+let crawldelayline = p.seq(function*() {
+                       let result = {}
+                       yield p.maybe(LWS)
+                       yield p.either([p.string('crawl-delay'), p.string('Crawl-delay')])
+                       yield p.maybe(LWS)
+                       yield p.char(':')
+                       yield p.maybe(LWS)
+                       result.value = (yield p.float).value
+
+                       if (result.value < 0)
+                         yield p.fail
+
+                       let commentValue = (yield p.maybe(comment)).value
+                       if (commentValue)
+                         result.comment = commentValue
+
+                       yield EOL
+                       return { crawldelay: result }
+                     })
+
+// hostline = [LWS] "host" [LWS] ":" [LWS] net_loc [comment] EOL
+let hostline = p.seq(function*() {
+                 let result = {}
+                 yield p.maybe(LWS)
+                 yield p.either([p.string('host'), p.string('Host')])
+                 yield p.maybe(LWS)
+                 yield p.char(':')
+                 yield p.maybe(LWS)
+                 result.value = (yield net_loc).value
+
+                 if (result.value && !result.value.length)
+                   yield p.fail
+
+                 let commentValue = (yield p.maybe(comment)).value
+                 if (commentValue)
+                   result.comment = commentValue
+
+                 yield EOL
+                 return { host: result }
+               })
+
+// *( ( <1>*startgroupline *(groupmemberline | nongroupline | crawldelayline | hostline | comment) | nongroupline | comment) )
+let entriesNS   = p.manyA(p.either([
+                    p.seq(function*() {
+                      let useragentLines = (yield p.many1A(startgroupline)).value
+                      let lines = (yield p.manyA(p.either([groupmemberline, nongroupline, crawldelayline, hostline, comment]))).value
+                      return useragentLines.concat(lines)
+                    }),
+                    nongroupline,
+                    comment
+                  ]))
+  , robotstxtNS = p.seq(function*() {
+                    yield p.maybe(BOM)
+                    return (yield entriesNS).value
+                  })
+
+
 
 let seqEOF = function(parser, parseTailingSpaces) {
   return p.seq(function*() {
@@ -163,8 +233,8 @@ let seqEOF = function(parser, parseTailingSpaces) {
   })
 }
 
-let parse = string => [].concat.apply([], p.parse(seqEOF(robotstxt, true), p.stream(string)).value || [])  // flatten
-
+let parse   = string => [].concat.apply([], p.parse(seqEOF(robotstxt,   true), p.stream(string)).value || [])  // flatten
+  , parseNS = string => [].concat.apply([], p.parse(seqEOF(robotstxtNS, true), p.stream(string)).value || [])  // flatten
 
 
 module.exports = {
@@ -173,7 +243,16 @@ module.exports = {
   isAnychar:   isAnychar,
   isValuechar: isValuechar,
 
-  parse:           parse,
+  setStrictLWS: setStrictLWS,
+
+  seqEOF:  seqEOF,
+  parse:   parse,
+
+  parseNS:        parseNS,
+  entriesNS:      entriesNS,
+  robotstxtNS:    robotstxtNS,
+  crawldelayline: crawldelayline,
+  hostline:       hostline,
 
   robotstxt:       robotstxt,
   entries:         entries,
@@ -196,7 +275,5 @@ module.exports = {
 
   EOL: EOL,
   LWS: LWS,
-  BOM: BOM,
-
-  seqEOF: seqEOF
+  BOM: BOM
 }

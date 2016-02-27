@@ -7,8 +7,10 @@ const expect = require('chai').expect
 
 const s = require('../src/parsers')
 
-const expected  = require('./expected.json')
-const robotstxt = fs.readFileSync(path.resolve('.', `${__dirname}/robots.txt`), 'utf8')
+const expected    = require('./expected.json')
+const expectedNS  = require('./expected.ns.json')
+const robotstxt   = fs.readFileSync(path.resolve('.', `${__dirname}/robots.txt`),    'utf8')
+const robotstxtNS = fs.readFileSync(path.resolve('.', `${__dirname}/robots.ns.txt`), 'utf8')
 
 
 describe('Predicates', () => {
@@ -70,12 +72,38 @@ describe('Parsers', () => {
 
   describe('LWS', () => {
     it('should parse text', () => {
+      expect(p.parse(s.seqEOF(s.LWS), p.stream(''))).to.have.property('value', '')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\n'))).to.have.property('value', '\n')
       expect(p.parse(s.seqEOF(s.LWS), p.stream('\n '))).to.have.property('value', '\n ')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\n  \t'))).to.have.property('value', '\n  \t')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\r '))).to.have.property('value', '\r ')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\r\n '))).to.have.property('value', '\r\n ')
     })
 
     it('should fail to parse text', () => {
-      expect(p.parse(s.LWS, p.stream(''))).to.be.instanceof(Error)
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('a'))).to.be.instanceof(Error)
+    })
+  })
+
+  describe('Strict LWS', function() {
+    before('setStrictLWS(true)', function() {
+      s.setStrictLWS(true)
+    })
+
+    it('should parse text', function() {
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\n '))).to.have.property('value', '\n ')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\n  \t'))).to.have.property('value', '\n  \t')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\r '))).to.have.property('value', '\r ')
+      expect(p.parse(s.seqEOF(s.LWS), p.stream('\r\n '))).to.have.property('value', '\r\n ')
+    })
+
+    it('should fail to parse text', function() {
+      expect(p.parse(s.LWS, p.stream('')))  .to.be.instanceof(Error)
       expect(p.parse(s.LWS, p.stream('\n'))).to.be.instanceof(Error)
+    })
+
+    after('setStrictLWS(false)', function() {
+      s.setStrictLWS(false)
     })
   })
 
@@ -184,9 +212,10 @@ describe('Parsers', () => {
   describe('nongroupline', () => {
     it('should parse text', () => {
       let string = 'http://localhost:80/static/sitemap.xml'
-      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string}\n`)).value).to.deep.equal({ sitemap: { value: string } })
+      expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string}\n`)).value)      .to.deep.equal({ sitemap: { value: string } })
       expect(p.parse(s.nongroupline, p.stream(`sitemap: ${string} #h3y!\n`)).value).to.deep.equal({ sitemap: { value: string, comment: 'h3y!' } })
-      expect(p.parse(s.nongroupline, p.stream(`: f00\n`)).value).to.deep.equal({ othernongroupfield: { value: 'f00' } })
+
+      expect(p.parse(s.nongroupline, p.stream(`: f00\n`)).value)      .to.deep.equal({ othernongroupfield: { value: 'f00' } })
       expect(p.parse(s.nongroupline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othernongroupfield: { value: 'bar ', comment: 'h3y!' } })
     })
 
@@ -202,11 +231,13 @@ describe('Parsers', () => {
   describe('groupmemberline', () => {
     it('should parse text', () => {
       let string = '/static/*.js'
-      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string}\n`)).value).to.deep.equal({ allow: { value: string } })
-      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string} #h3y!\n`)).value).to.deep.equal({ allow: { value: string, comment: 'h3y!' } })
-      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string}\n`)).value).to.deep.equal({ disallow: { value: string } })
+      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string}\n`)).value)         .to.deep.equal({ allow: { value: string } })
+      expect(p.parse(s.groupmemberline, p.stream(`allow: ${string} #h3y!\n`)).value)   .to.deep.equal({ allow: { value: string, comment: 'h3y!' } })
+
+      expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string}\n`)).value)      .to.deep.equal({ disallow: { value: string } })
       expect(p.parse(s.groupmemberline, p.stream(`disallow: ${string} #h3y!\n`)).value).to.deep.equal({ disallow: { value: string, comment: 'h3y!' } })
-      expect(p.parse(s.groupmemberline, p.stream(`: foo\n`)).value).to.deep.equal({ othermemberfield: { value: 'foo' } })
+
+      expect(p.parse(s.groupmemberline, p.stream(`: foo\n`)).value)      .to.deep.equal({ othermemberfield: { value: 'foo' } })
       expect(p.parse(s.groupmemberline, p.stream(`: bar #h3y!\n`)).value).to.deep.equal({ othermemberfield: { value: 'bar ', comment: 'h3y!' } })
     })
 
@@ -238,7 +269,7 @@ describe('Parsers', () => {
 
   describe('entries', () => {
     it('should parse text', () => {
-      expect(p.parse(s.entries, p.stream(robotstxt)).value).to.deep.equal([expected])
+      expect(p.parse(s.entries, p.stream(robotstxt)).value)              .to.deep.equal([expected])
       expect(p.parse(s.entries, p.stream(robotstxt.toLowerCase())).value).to.deep.equal([expected])
     })
 
@@ -251,6 +282,65 @@ describe('Parsers', () => {
   describe('robotstxt', () => {
     it('should parse text', () => {
       expect(p.parse(s.seqEOF(s.robotstxt, true), p.stream('\uFEFF'+robotstxt)).value).to.deep.equal([expected])
+    })
+  })
+})
+
+
+
+describe('Nonstandard Parsers', () => {
+  describe('crawldelayline', () => {
+    it('should parse text', () => {
+      expect(p.parse(s.crawldelayline, p.stream('crawl-delay: 30\n')).value)     .to.deep.equal({ crawldelay: { value: 30 } })
+      expect(p.parse(s.crawldelayline, p.stream('crawl-delay: 2.5\n')).value)    .to.deep.equal({ crawldelay: { value: 2.5 } })
+      expect(p.parse(s.crawldelayline, p.stream('crawl-delay: 0 #f00!\n')).value).to.deep.equal({ crawldelay: { value: 0, comment: 'f00!' } })
+    })
+
+    it('should fail to parse text', () => {
+      ['crawl-delay: '
+      ,'crawl-delay: -0.1'
+      ,'crawl-delay: curl'
+      ,'user-agent: curl'
+      ,'allow: /static/sitemap.xml\n'
+      ,'sitemap: http://localhost:80/static/sitemap.xml\n'
+      ].forEach(string => expect(p.parse(s.seqEOF(s.crawldelayline), p.stream(string))).to.be.instanceof(Error))
+    })
+  })
+
+  describe('hostline', () => {
+    it('should parse text', () => {
+      expect(p.parse(s.hostline, p.stream('host: example.com\n')).value)     .to.deep.equal({ host: { value: 'example.com' } })
+      expect(p.parse(s.hostline, p.stream('host: www.example.com\n')).value) .to.deep.equal({ host: { value: 'www.example.com' } })
+      expect(p.parse(s.hostline, p.stream('host: www.ex.org #f00!\n')).value).to.deep.equal({ host: { value: 'www.ex.org', comment: 'f00!' } })
+    })
+
+    it('should fail to parse text', () => {
+      ['host: '
+      ,'host: 1'
+      ,'host: ex.com'
+      ,'crawl-delay: curl'
+      ,'user-agent: curl'
+      ,'allow: /static/sitemap.xml\n'
+      ,'sitemap: http://localhost:80/static/sitemap.xml\n'
+      ].forEach(string => expect(p.parse(s.seqEOF(s.hostline), p.stream(string))).to.be.instanceof(Error))
+    })
+  })
+
+  describe('entriesNS', () => {
+    it('should parse text', () => {
+      expect(p.parse(s.entriesNS, p.stream(robotstxtNS)).value)              .to.deep.equal([expectedNS])
+      expect(p.parse(s.entriesNS, p.stream(robotstxtNS.toLowerCase())).value).to.deep.equal([expectedNS])
+    })
+
+    it('should fail to parse text', () => {
+      expect(p.parse(s.seqEOF(s.entriesNS), p.stream('\uFEFF'+robotstxtNS))).to.be.instanceof(Error)
+      expect(p.parse(s.seqEOF(s.entriesNS), p.stream(robotstxtNS.toUpperCase()))).to.be.instanceof(Error)
+    })
+  })
+
+  describe('robotstxtNS', () => {
+    it('should parse text', () => {
+      expect(p.parse(s.seqEOF(s.robotstxtNS, true), p.stream('\uFEFF'+robotstxtNS)).value).to.deep.equal([expectedNS])
     })
   })
 })

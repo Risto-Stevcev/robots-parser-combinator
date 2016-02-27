@@ -1,6 +1,6 @@
 {
   "name": "robots-parser-combinator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A proper robots.txt parser and combinator that works with eulalie",
   "main": "index.js",
   "scripts": {
